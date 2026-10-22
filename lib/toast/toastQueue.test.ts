@@ -153,3 +153,26 @@ describe("ToastQueue", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 });
+
+describe("toastQueue singleton", () => {
+  it("is a ToastQueue with the default max visible", () => {
+    expect(toastQueue).toBeInstanceOf(ToastQueue);
+    expect(toastQueue.getMaxVisible()).toBe(DEFAULT_MAX_VISIBLE);
+  });
+
+  it("is shared state between calls and subscribers", () => {
+    const listener = vi.fn();
+    const unsub = toastQueue.subscribe(listener);
+    toastQueue.info("shared");
+    expect(listener).toHaveBeenLastCalledWith([
+      expect.objectContaining({ message: "shared" }),
+    ]);
+    unsub();
+  });
+
+  it("starts empty after clear", () => {
+    toastQueue.error("x");
+    toastQueue.clear();
+    expect(toastQueue.getVisible()).toEqual([]);
+  });
+});
