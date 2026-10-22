@@ -176,3 +176,39 @@ describe("toastQueue singleton", () => {
     expect(toastQueue.getVisible()).toEqual([]);
   });
 });
+
+describe("toast", () => {
+  it("success/error/info enqueue on the shared queue and return ids", () => {
+    const s = toast.success("s");
+    const e = toast.error("e");
+    const i = toast.info("i");
+    expect(new Set([s, e, i]).size).toBe(3);
+    expect(toastQueue.getVisible().map((t) => t.type)).toEqual([
+      "error",
+      "success",
+      "info",
+    ]);
+  });
+
+  it("forwards options", () => {
+    toast.info("opt", { duration: 50, priority: 7 });
+    expect(toastQueue.getVisible()[0]).toMatchObject({ duration: 50, priority: 7 });
+    vi.advanceTimersByTime(50);
+    expect(toastQueue.getVisible()).toHaveLength(0);
+  });
+
+  it("dismiss removes a toast by id; unknown id is a no-op", () => {
+    const id = toast.info("a");
+    toast.dismiss("missing");
+    expect(toastQueue.getVisible()).toHaveLength(1);
+    toast.dismiss(id);
+    expect(toastQueue.getVisible()).toHaveLength(0);
+  });
+
+  it("clear removes all toasts", () => {
+    toast.info("a");
+    toast.error("b");
+    toast.clear();
+    expect(toastQueue.getVisible()).toHaveLength(0);
+  });
+});
