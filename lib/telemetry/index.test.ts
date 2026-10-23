@@ -103,3 +103,57 @@ describe("reportError", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 });
+
+describe("setTelemetryProvider", () => {
+  beforeEach(() => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_TELEMETRY_DISABLED", "false");
+  });
+
+  afterEach(() => {
+    setTelemetryProvider(null);
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it("routes subsequent reports to the registered provider", () => {
+    const provider = vi.fn();
+    setTelemetryProvider(provider);
+    reportError("oops", { contractId: "C1" });
+    expect(provider).toHaveBeenCalledTimes(1);
+    expect(provider).toHaveBeenCalledWith("oops", { contractId: "C1" });
+  });
+
+  it("replaces a previously registered provider", () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    setTelemetryProvider(first);
+    setTelemetryProvider(second);
+    reportError(new Error("x"));
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledTimes(1);
+  });
+
+  it("restores the console fallback when set to null", () => {
+    const provider = vi.fn();
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    setTelemetryProvider(provider);
+    setTelemetryProvider(null);
+    reportError(new Error("x"));
+    expect(provider).not.toHaveBeenCalled();
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it("does not invoke the provider on registration", () => {
+    const provider = vi.fn();
+    setTelemetryProvider(provider);
+    expect(provider).not.toHaveBeenCalled();
+  });
+
+  it("propagates errors thrown by the provider", () => {
+    setTelemetryProvider(() => {
+      throw new Error("provider failed");
+    });
+    expect(() => reportError(new Error("x"))).toThrow("provider failed");
+  });
+});
