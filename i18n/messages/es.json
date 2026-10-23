@@ -1,0 +1,28 @@
+{
+  "Shell": {
+    "connectWallet": "conectar billetera",
+    "connecting": "conectando…",
+    "disconnect": "desconectar",
+    "footer": "SYNAPSE CORE v{version} · TESTNET",
+    "language": "Idioma",
+    "network": "TESTNET",
+    "sections": "Secciones de la aplicación",
+    "switchAccount": "Cambiar cuenta activa",
+    "walletConnected": "Billetera conectada: {address}",
+    "tabError": "No se pudo cargar {tab}",
+    "tabs": {
+      "dashboard": "PANEL",
+      "transactions": "TRANSACCIONES",
+      "admin": "ADMIN",
+      "docs": "DOCS"
+    },
+    "rpc": {
+      "label": "RPC",
+      "connecting": "conectando…",
+      "connected": "conectado",
+      "connectedWithEvent": "conectado · último evento {age}",
+      "error": "error",
+      "errorWithDetail": "error · {detail}"
+    }
+  }
+}

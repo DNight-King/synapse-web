@@ -2,7 +2,7 @@
  * Security headers regression test — Task #2
  *
  * Loads next.config.ts directly (no HTTP server needed) and asserts that the
- * catch-all route "/(.*)" carries the anti-clickjacking headers required to
+ * catch-all route "/:path*" carries the anti-clickjacking headers required to
  * prevent iframe embedding of the wallet-signing UI.
  *
  * If any of these headers are missing or have the wrong value, the test fails
@@ -15,24 +15,25 @@ import nextConfig from "../next.config";
 /**
  * Convert a Next.js route-header `source` pattern into a RegExp.
  *
- * Next.js uses path-to-regexp syntax internally. The patterns used in this
- * project are simple:
- *   "/(.*)"  → catch-all (matches every path)
- *   "/api/:path*" → prefix match (not currently used here)
- *
- * We handle the two common forms:
- *   - A literal string with no special tokens → exact match
- *   - The catch-all "/(.*)" → matches everything
+ * The patterns used in this project are simple:
+ *   "/:path*"             -> catch-all (matches every path)
+ *   "/_next/static/:path*" -> prefix match for build output
+ * Anything without a token is treated as an exact path.
  */
 function sourceToRegex(source: string): RegExp {
-  // Catch-all: Next.js uses /(.*) to mean "every path".
-  if (source === "/(.*)") {
+  const escape = (value: string) => value.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+
+  // Catch-all: every path.
+  if (source === "/:path*") {
     return /^\/.*$/;
   }
 
-  // Escape the source as a literal path pattern, preserving path separators.
-  const escaped = source.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
-  return new RegExp(`^${escaped}$`);
+  // "<prefix>/:path*" matches the prefix and anything below it.
+  if (source.endsWith("/:path*")) {
+    return new RegExp(`^${escape(source.slice(0, -"/:path*".length))}(/.*)?$`);
+  }
+
+  return new RegExp(`^${escape(source)}$`);
 }
 
 async function getHeaders(path: string): Promise<Record<string, string>> {
@@ -87,7 +88,7 @@ describe("Security headers — anti-clickjacking (X-Frame-Options / CSP frame-an
     // by verifying our sourceToRegex logic for a non-catch-all source.
     const rules = await nextConfig.headers!();
     // The catch-all rule must be present and must match every route tested above.
-    const catchAll = rules.find((r) => r.source === "/(.*)");
+    const catchAll = rules.find((r) => r.source === "/:path*");
     expect(catchAll, "catch-all rule must exist in next.config.ts").toBeDefined();
     expect(catchAll!.headers.map((h) => h.key)).toContain("X-Frame-Options");
   });

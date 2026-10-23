@@ -1,4 +1,8 @@
-# Local development
+---
+title: Local development
+description: Running the app and its toolchain locally or in a container.
+order: 13
+---
 
 Two supported ways to run the app locally. Both use the same Node version.
 

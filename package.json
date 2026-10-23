@@ -13,13 +13,16 @@
     "test:watch": "vitest",
     "release": "semantic-release",
     "release:dry": "semantic-release --dry-run",
-    "prepare": "husky"
+    "prepare": "husky",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,json,css,md}": "prettier --write"
   },
   "dependencies": {
     "@creit.tech/stellar-wallets-kit": "^2.6.0",
+    "@playwright/test": "^1.64.1",
     "@stellar/stellar-sdk": "^16.1.0",
     "next": "16.2.6",
     "react": "19.2.4",

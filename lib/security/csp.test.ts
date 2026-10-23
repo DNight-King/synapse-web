@@ -203,7 +203,8 @@ describe("next.config.ts", () => {
   it("applies the headers to every route", async () => {
     const routes = await importTheRealConfig({ NODE_ENV: "production" });
 
-    expect(routes).toHaveLength(1);
+    // The catch-all comes first; a second rule only layers long-lived caching
+    // onto content-hashed build output (see next.config.test.ts).
     expect(routes[0]?.source).toBe("/:path*");
   });
 
@@ -217,6 +218,7 @@ describe("next.config.ts", () => {
     );
 
     expect(Object.keys(headers).sort()).toEqual([
+      "Cache-Control",
       "Content-Security-Policy",
       "Permissions-Policy",
       "Referrer-Policy",

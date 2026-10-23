@@ -248,7 +248,9 @@ describe("RpcRateLimiter — logging when throttled", () => {
     const p2 = limiter.acquire();
 
     // Only one warn should fire for this window.
-    const throttleWarns = (console.warn as ReturnType<typeof vi.spyOn>).mock.calls.filter(
+    const throttleWarns = (
+      console.warn as unknown as ReturnType<typeof vi.spyOn>
+    ).mock.calls.filter(
       (args) =>
         String(args[0]).includes("[RPC Rate Limiter]") && String(args[0]).includes("Throttling")
     );
@@ -268,7 +270,7 @@ describe("RpcRateLimiter — logging when throttled", () => {
     vi.advanceTimersByTime(1_000);
     await pending;
 
-    const drainWarns = (console.warn as ReturnType<typeof vi.spyOn>).mock.calls.filter(
+    const drainWarns = (console.warn as unknown as ReturnType<typeof vi.spyOn>).mock.calls.filter(
       (args) =>
         String(args[0]).includes("[RPC Rate Limiter]") && String(args[0]).includes("Refilled")
     );
@@ -279,8 +281,8 @@ describe("RpcRateLimiter — logging when throttled", () => {
     await limiter.acquire(); // drain
     const pending = limiter.acquire();
 
-    const warnCall = (console.warn as ReturnType<typeof vi.spyOn>).mock.calls.find((args) =>
-      String(args[0]).includes("Throttling")
+    const warnCall = (console.warn as unknown as ReturnType<typeof vi.spyOn>).mock.calls.find(
+      (args) => String(args[0]).includes("Throttling")
     );
     expect(warnCall).toBeDefined();
     const msg = String(warnCall![0]);

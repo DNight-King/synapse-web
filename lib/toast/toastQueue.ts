@@ -20,6 +20,13 @@ export interface ToastItem {
   /** Auto-dismiss delay in ms. */
   duration: number;
   createdAt: number;
+  /** Optional action button rendered inside the toast (e.g. "Stay connected"). */
+  action?: ToastAction;
+}
+
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
 }
 
 export interface ToastOptions {
@@ -33,6 +40,8 @@ export interface ToastOptions {
    * DEDUPE_WINDOW_MS.
    */
   dedupeWindow?: number;
+  /** Optional action button rendered inside the toast. */
+  action?: ToastAction;
 }
 
 /** Default auto-dismiss timings per type (ms). */
@@ -146,6 +155,7 @@ export class ToastQueue {
       priority: options.priority ?? DEFAULT_PRIORITIES[type],
       duration: options.duration ?? DEFAULT_DURATIONS[type],
       createdAt: now,
+      ...(options.action ? { action: options.action } : {}),
     };
 
     this.items.push(item);

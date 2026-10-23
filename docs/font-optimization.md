@@ -1,3 +1,9 @@
+---
+title: Font optimization
+description: How IBM Plex Mono is loaded to avoid invisible text and layout shift.
+order: 8
+---
+
 # IBM Plex Mono Font-Loading & Layout-Shift Optimization
 
 ## Strategy & Core Web Vitals Impact

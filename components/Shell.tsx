@@ -1,16 +1,11 @@
 "use client";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { DashboardTab } from "./dashboard/DashboardTab";
-import { TransactionsTab } from "./transactions/TransactionsTab";
-import { AdminTab } from "./admin/AdminTab";
-import { DocsTab } from "./docs/DocsTab";
-import { AnalyticsTab } from "./analytics/AnalyticsTab";
+import { usePathname } from "next/navigation";
 import { NotificationCenter } from "./notifications/NotificationCenter";
 import { NotificationProvider } from "@/lib/notifications/NotificationStore";
 import { TabErrorBoundary } from "@/components/ui/TabErrorBoundary";
-import { GuidedTour, useGuidedTour } from "@/components/onboarding/GuidedTour";
+import { GuidedTour } from "@/components/onboarding/GuidedTour";
 import { CommandPalette, type Command } from "./command-palette/CommandPalette";
 import { SessionAuditPanel } from "@/components/wallet/SessionAuditPanel";
 import { ContractSwitcher } from "@/components/ui/ContractSwitcher";
@@ -34,15 +29,20 @@ import { useWallet } from "@/lib/wallet/WalletProvider";
 import { useToast } from "@/components/ui/Toast";
 import { OriginBadge } from "@/components/wallet/OriginBadge";
 import { shortId } from "@/lib/utils";
-import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { LOCALES, LOCALE_LABELS, type Locale } from "@/i18n/config";
+import { useLocale, useTranslations } from "@/lib/i18n/I18nProvider";
+import { LOCALES, LOCALE_COOKIE, LOCALE_LABELS, type Locale } from "@/i18n/config";
 import { useWalletExtensionDetection } from "@/lib/wallet/detection";
 import { NoWalletGuidance } from "@/components/wallet/NoWalletGuidance";
 import { Profiled, ProfilerOverlay } from "@/lib/dev-tools/ProfilerOverlay";
 import { resolveActiveTab, visibleTabs, type FlagKey } from "@/lib/flags/definitions";
 import { useFlag, useFlags } from "@/lib/flags/FlagProvider";
+import { DEFAULT_TAB, TABS, tabFromPathname, tabPath, type Tab } from "@/lib/tabs";
 import { ShellTabButton } from "@/components/shell/ShellTabButton";
+
+export type { Tab };
+
+/** Viewport width (px) below which the header and tab bar switch to the mobile layout. */
+const MOBILE_MAX = 768;
 
 const TabLoadingFallback = () => (
   <div
@@ -80,9 +80,6 @@ const DocsTab = dynamic(() => import("./docs/DocsTab").then((mod) => mod.DocsTab
   loading: () => <TabLoadingFallback />,
 });
 
-export type Tab = "dashboard" | "transactions" | "analytics" | "admin" | "docs";
-export const TABS: Tab[] = ["dashboard", "transactions", "analytics", "admin", "docs"];
-
 type Theme = "dark" | "light";
 const THEME_STORAGE_KEY = "synapse-theme";
 
@@ -90,6 +87,7 @@ function getPreferredTheme(): Theme {
   if (typeof window === "undefined") return "dark";
   const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
   if (stored === "dark" || stored === "light") return stored;
+  if (typeof window.matchMedia !== "function") return "dark";
   return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
 }
 
@@ -121,6 +119,8 @@ export function Shell({ initialTab = "dashboard" }: { initialTab?: Tab }) {
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [showGuidance, setShowGuidance] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [tourSignal, setTourSignal] = useState(0);
   const { status: rpcStatus, lastEventAge, health: rpcHealth } = useSorobanStatus();
   const { address, accounts, connecting, error, connect, disconnect, switchAccount } = useWallet();
   const { hasAny, checked } = useWalletExtensionDetection();
@@ -145,7 +145,7 @@ export function Shell({ initialTab = "dashboard" }: { initialTab?: Tab }) {
   // click. Without this, disabling `tab.admin` from the flag console would
   // blank the content area for anyone currently looking at it.
   const shownTabs = visibleTabs(TABS, isFlagEnabled);
-  const activeTab = resolveActiveTab(TABS, tab, isFlagEnabled);
+  const tab: Tab = resolveActiveTab(TABS, selectedTab, isFlagEnabled) ?? DEFAULT_TAB;
   const connected = address !== null;
   const canSwitch = connected && accounts.length > 1;
   const { toast } = useToast();
@@ -153,24 +153,23 @@ export function Shell({ initialTab = "dashboard" }: { initialTab?: Tab }) {
   const locale = useLocale();
   const tour = useGuidedTour();
   const navRef = useRef<HTMLElement>(null);
-  const [tourSignal, setTourSignal] = useState(0);
 
-  // Sync tab from URL hash if present
-  useEffect(() => {
+  // Each tab is a statically prerendered route, so selecting one updates the
+  // URL in place (without a navigation) to keep it linkable and reloadable.
+  const handleTabSelect = useCallback((selected: Tab) => {
+    setSelectedTab(selected);
     if (typeof window !== "undefined") {
-      const hash = window.location.hash.replace("#", "").toLowerCase() as Tab;
-      if (TABS.includes(hash)) {
-        setTab(hash);
-      }
+      window.history.pushState(null, "", tabPath(selected));
     }
   }, []);
 
-  const handleTabSelect = (selectedTab: Tab) => {
-    setTab(selectedTab);
-    if (typeof window !== "undefined") {
-      window.location.hash = selectedTab;
-    }
-  };
+  useEffect(() => {
+    // Follow back/forward navigation between tab URLs.
+    const onPopState = () => setSelectedTab(tabFromPathname(window.location.pathname));
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
   useEffect(() => {
     setTheme(getPreferredTheme());
   }, []);
@@ -180,25 +179,29 @@ export function Shell({ initialTab = "dashboard" }: { initialTab?: Tab }) {
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
 
-  // `/` stays canonical for the dashboard so the root URL does not turn into
-  // `/dashboard`, which would make the shareable link uglier for no gain.
-  const selectTab = useCallback(
-    (next: Tab) => {
-      router.push(next === DEFAULT_TAB ? "/" : tabPath(next));
-    },
-    [router]
-  );
-
   useEffect(() => {
-    if (error) toast(error, "error");
+    if (error) toast(error.message, "error");
   }, [error, toast]);
 
   useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
     const mq = window.matchMedia(`(max-width: ${MOBILE_MAX - 1}px)`);
     const update = () => setIsMobile(mq.matches);
     update();
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
+  }, []);
+
+  // Cmd/Ctrl+K opens the command palette.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((open) => !open);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
   const prevAddress = useRef<string | null>(null);
@@ -212,26 +215,29 @@ export function Shell({ initialTab = "dashboard" }: { initialTab?: Tab }) {
   }, [address, toast, t]);
 
   const onLocaleChange = (next: Locale) => {
-    document.cookie = `NEXT_LOCALE=${next};path=/;max-age=31536000;samesite=lax`;
-    router.refresh();
+    document.cookie = `${LOCALE_COOKIE}=${next};path=/;max-age=31536000;samesite=lax`;
+    window.location.reload();
   };
 
   // Keyboard navigation for tabs (WCAG 2.1 AA TabList Pattern)
   const handleTabKeyDown = (e: React.KeyboardEvent, index: number) => {
+    const count = shownTabs.length;
     let nextIndex = index;
     if (e.key === "ArrowRight") {
-      nextIndex = (index + 1) % TABS.length;
+      nextIndex = (index + 1) % count;
     } else if (e.key === "ArrowLeft") {
-      nextIndex = (index - 1 + TABS.length) % TABS.length;
+      nextIndex = (index - 1 + count) % count;
     } else if (e.key === "Home") {
       nextIndex = 0;
     } else if (e.key === "End") {
-      nextIndex = TABS.length - 1;
+      nextIndex = count - 1;
     } else {
       return;
     }
     e.preventDefault();
-    handleTabSelect(TABS[nextIndex]);
+    const target = shownTabs[nextIndex];
+    if (!target) return;
+    handleTabSelect(target);
     const buttons = navRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
     buttons?.[nextIndex]?.focus();
   };
@@ -245,6 +251,37 @@ export function Shell({ initialTab = "dashboard" }: { initialTab?: Tab }) {
       connect();
     }
   };
+
+  const commands = useMemo<Command[]>(
+    () => [
+      ...shownTabs.map((target) => ({
+        id: `go-${target}`,
+        label: `Go to ${t(`tabs.${target}`)}`,
+        keywords: ["navigate", "tab", target],
+        action: () => handleTabSelect(target),
+      })),
+      {
+        id: "toggle-theme",
+        label: theme === "dark" ? "Switch to light theme" : "Switch to dark theme",
+        keywords: ["theme", "dark", "light", "appearance"],
+        action: () => setTheme((current) => (current === "dark" ? "light" : "dark")),
+      },
+      {
+        id: "wallet",
+        label: connected ? "Disconnect wallet" : "Connect wallet",
+        keywords: ["wallet", "connect", "disconnect", "account"],
+        action: handleConnectClick,
+      },
+      {
+        id: "security-briefing",
+        label: "Show wallet security briefing",
+        keywords: ["security", "help", "tour", "phishing"],
+        action: () => setTourSignal((s) => s + 1),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [shownTabs.join(","), t, theme, connected, handleTabSelect]
+  );
 
   return (
     <NotificationProvider>
@@ -481,8 +518,22 @@ export function Shell({ initialTab = "dashboard" }: { initialTab?: Tab }) {
             </button>
             <div style={{ position: "relative" }}>
               <button
+                data-tour="wallet"
                 onClick={() =>
-                  connected ? (canSwitch ? setSwitcherOpen((o) => !o) : disconnect()) : connect()
+                  connected
+                    ? canSwitch
+                      ? setSwitcherOpen((o) => !o)
+                      : disconnect()
+                    : handleConnectClick()
+                }
+                disabled={connecting}
+                aria-haspopup={canSwitch ? "listbox" : undefined}
+                aria-expanded={canSwitch ? switcherOpen : undefined}
+                style={{
+                  padding: "7px 18px",
+                  background: connected ? "transparent" : "rgba(245,166,35,0.08)",
+                  border: `1px solid ${connected ? BORDER : AMBER}`,
+                  color: connected ? "#aaa" : AMBER,
                 }
                 disabled={connecting}
                 aria-haspopup={canSwitch ? "listbox" : undefined}
@@ -507,7 +558,7 @@ export function Shell({ initialTab = "dashboard" }: { initialTab?: Tab }) {
                   if (!connected) e.currentTarget.style.background = ACCENT_WEAK;
                 }}
               >
-                {connecting ? "connecting…" : connected ? shortId(address) : "connect wallet"}
+                {connecting ? t("connecting") : connected ? shortId(address) : t("connectWallet")}
                 {canSwitch ? " ▾" : ""}
               </button>
 
@@ -633,6 +684,20 @@ export function Shell({ initialTab = "dashboard" }: { initialTab?: Tab }) {
                   >
                     disconnect
                   </button>
+                    style={{
+                      padding: "9px 14px",
+                      background: "transparent",
+                      border: "none",
+                      color: DIM,
+                      fontFamily: MONO,
+                      fontSize: 11,
+                      textAlign: "left",
+                      cursor: "pointer",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    disconnect
+                  </button>
                 </div>
               )}
             </div>
@@ -679,7 +744,7 @@ export function Shell({ initialTab = "dashboard" }: { initialTab?: Tab }) {
             WebkitOverflowScrolling: "touch",
           }}
         >
-          {TABS.map((tabKey, idx) => (
+          {shownTabs.map((tabKey, idx) => (
             <button
               key={tabKey}
               id={`tab-${tabKey}`}
@@ -713,7 +778,7 @@ export function Shell({ initialTab = "dashboard" }: { initialTab?: Tab }) {
                 if (tab !== tabKey) e.currentTarget.style.color = DIM;
               }}
             >
-              {tabKey.toUpperCase()}
+              {t(`tabs.${tabKey}`)}
             </button>
           ))}
         </nav>
@@ -750,16 +815,17 @@ export function Shell({ initialTab = "dashboard" }: { initialTab?: Tab }) {
         <main
           className="shell-main"
           id={`tabpanel-${tab}`}
-
-              }}
-              onMouseEnter={(e) => {
-                if (tab !== tabKey) e.currentTarget.style.color = AMBER;
-              }}
-              onMouseLeave={(e) => {
-                if (tab !== tabKey) e.currentTarget.style.color = DIM;
-              }}
+          role="tabpanel"
+          aria-labelledby={`tab-${tab}`}
+          style={{ overflowX: "hidden" }}
+        >
+          {tab === "dashboard" && (
+            <TabErrorBoundary
+              tabName="dashboard"
+              walletConnected={connected}
+              walletAddress={address ?? undefined}
             >
-              {tabKey.toUpperCase()}
+
             </button>
           ))}
         </nav>

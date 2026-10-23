@@ -48,7 +48,7 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
       } else {
         const focusable = containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
         if (focusable.length > 0) {
-          focusable[0].focus();
+          focusable[0]!.focus();
         } else {
           containerRef.current.focus();
         }
@@ -82,7 +82,7 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
             !containerRef.current.contains(document.activeElement)
           ) {
             event.preventDefault();
-            lastElement.focus();
+            lastElement!.focus();
           }
         } else {
           if (
@@ -90,7 +90,7 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>(
             !containerRef.current.contains(document.activeElement)
           ) {
             event.preventDefault();
-            firstElement.focus();
+            firstElement!.focus();
           }
         }
       }

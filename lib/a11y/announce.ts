@@ -47,7 +47,7 @@ export function announce(
 
     let batchedMessage: string;
     if (pendingBatch.length === 1) {
-      batchedMessage = pendingBatch[0];
+      batchedMessage = pendingBatch[0]!;
     } else {
       batchedMessage = `${pendingBatch.length} updates: ${pendingBatch.join("; ")}`;
     }
