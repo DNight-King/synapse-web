@@ -11,6 +11,8 @@ import { ToastProvider } from "@/components/ui/Toast";
 vi.mock("@/lib/wallet/WalletProvider", () => ({
   useWallet: () => ({
     address: "GBZXN7PIRZGNMHGA728RGRYA72R6UGRM6X8J73V2S8L7D2Z5V5P8K3M4",
+    accounts: [],
+    switchAccount: vi.fn(),
     connecting: false,
     error: null,
     connect: vi.fn(),

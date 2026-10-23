@@ -1,0 +1,28 @@
+{
+  "Shell": {
+    "connectWallet": "connect wallet",
+    "connecting": "connecting…",
+    "disconnect": "disconnect",
+    "footer": "SYNAPSE CORE v{version} · TESTNET",
+    "language": "Language",
+    "network": "TESTNET",
+    "sections": "Application sections",
+    "switchAccount": "Switch active account",
+    "walletConnected": "Wallet connected: {address}",
+    "tabError": "{tab} failed to load",
+    "tabs": {
+      "dashboard": "DASHBOARD",
+      "transactions": "TRANSACTIONS",
+      "admin": "ADMIN",
+      "docs": "DOCS"
+    },
+    "rpc": {
+      "label": "RPC",
+      "connecting": "connecting…",
+      "connected": "connected",
+      "connectedWithEvent": "connected · last event {age}",
+      "error": "error",
+      "errorWithDetail": "error · {detail}"
+    }
+  }
+}

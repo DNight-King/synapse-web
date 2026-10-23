@@ -55,7 +55,7 @@ export function isValidStellarAddress(value: string): boolean {
   if (!decoded || decoded.length !== 35) return false;
 
   const payload = decoded.subarray(0, 33);
-  const checksum = decoded[32] | (decoded[33] << 8);
+  const checksum = decoded[32]! | (decoded[33]! << 8);
   return crc16xmodem(payload) === checksum;
 }
 
@@ -137,7 +137,10 @@ export function buildParamSchema(specs: ParamSpec[]) {
     if (spec.kind === "address") {
       shape[spec.name] = spec.optional ? optionalStellarAddressSchema : stellarAddressSchema;
     } else if (spec.kind === "number") {
-      shape[spec.name] = numericParamSchema(spec.min ?? Number.MIN_SAFE_INTEGER, spec.max ?? Number.MAX_SAFE_INTEGER);
+      shape[spec.name] = numericParamSchema(
+        spec.min ?? Number.MIN_SAFE_INTEGER,
+        spec.max ?? Number.MAX_SAFE_INTEGER
+      );
     } else {
       shape[spec.name] = spec.optional ? z.string().trim() : requiredTextSchema;
     }

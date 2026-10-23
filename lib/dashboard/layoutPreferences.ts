@@ -6,10 +6,7 @@
  */
 
 export type DashboardWidgetId =
-  | 'statCards'
-  | 'pipeline'
-  | 'contractInfoPanel'
-  | 'recentTxTable';
+  "statCards" | "pipeline" | "health" | "contractInfoPanel" | "recentTxTable";
 
 export interface DashboardWidgetDefinition {
   id: DashboardWidgetId;
@@ -18,11 +15,17 @@ export interface DashboardWidgetDefinition {
 
 /** Canonical widget order used as the sensible default layout. */
 export const DASHBOARD_WIDGETS: DashboardWidgetDefinition[] = [
-  { id: 'statCards', label: 'Stat Cards' },
-  { id: 'pipeline', label: 'Pipeline' },
-  { id: 'contractInfoPanel', label: 'Contract Info' },
-  { id: 'recentTxTable', label: 'Recent Transactions' },
+  { id: "statCards", label: "Stat Cards" },
+  { id: "pipeline", label: "Pipeline" },
+  { id: "health", label: "Platform Health" },
+  { id: "contractInfoPanel", label: "Contract Info" },
+  { id: "recentTxTable", label: "Recent Transactions" },
 ];
+
+/** Human-readable widget names, keyed by id, for control labels. */
+export const DASHBOARD_WIDGET_LABELS = Object.fromEntries(
+  DASHBOARD_WIDGETS.map((w) => [w.id, w.label])
+) as Record<DashboardWidgetId, string>;
 
 export interface DashboardLayoutPreferences {
   /** Ordered widget IDs; order defines render order. */
@@ -31,12 +34,12 @@ export interface DashboardLayoutPreferences {
   hidden: DashboardWidgetId[];
 }
 
-export const DASHBOARD_LAYOUT_STORAGE_KEY = 'dashboard.layoutPreferences.v1';
+export const DASHBOARD_LAYOUT_STORAGE_KEY = "dashboard.layoutPreferences.v1";
 
 const WIDGET_IDS: DashboardWidgetId[] = DASHBOARD_WIDGETS.map((w) => w.id);
 
 function isWidgetId(value: unknown): value is DashboardWidgetId {
-  return typeof value === 'string' && (WIDGET_IDS as string[]).includes(value);
+  return typeof value === "string" && (WIDGET_IDS as string[]).includes(value);
 }
 
 /** Returns a fresh copy of the default layout. */
@@ -49,11 +52,9 @@ export function getDefaultLayout(): DashboardLayoutPreferences {
  * dropped, missing widgets are appended in default order, and duplicates are
  * removed. This keeps the layout usable when widgets are added or removed.
  */
-export function normalizeLayout(
-  value: unknown,
-): DashboardLayoutPreferences {
+export function normalizeLayout(value: unknown): DashboardLayoutPreferences {
   const fallback = getDefaultLayout();
-  if (!value || typeof value !== 'object') {
+  if (!value || typeof value !== "object") {
     return fallback;
   }
 
@@ -90,8 +91,8 @@ export function normalizeLayout(
 }
 
 /** Reads the persisted layout, falling back to the default when unavailable. */
-export function loadLayout(): DashboardLayoutPreferences {
-  if (typeof window === 'undefined') {
+export function loadDashboardLayout(): DashboardLayoutPreferences {
+  if (typeof window === "undefined") {
     return getDefaultLayout();
   }
 
@@ -107,15 +108,15 @@ export function loadLayout(): DashboardLayoutPreferences {
 }
 
 /** Persists the layout to localStorage, ignoring storage failures. */
-export function saveLayout(layout: DashboardLayoutPreferences): void {
-  if (typeof window === 'undefined') {
+export function saveDashboardLayout(layout: DashboardLayoutPreferences): void {
+  if (typeof window === "undefined") {
     return;
   }
 
   try {
     window.localStorage.setItem(
       DASHBOARD_LAYOUT_STORAGE_KEY,
-      JSON.stringify(normalizeLayout(layout)),
+      JSON.stringify(normalizeLayout(layout))
     );
   } catch {
     // Storage may be unavailable (private mode, quota); layout stays in memory.
@@ -123,8 +124,8 @@ export function saveLayout(layout: DashboardLayoutPreferences): void {
 }
 
 /** Removes the persisted layout so the default is used again. */
-export function resetLayout(): DashboardLayoutPreferences {
-  if (typeof window !== 'undefined') {
+export function resetDashboardLayout(): DashboardLayoutPreferences {
+  if (typeof window !== "undefined") {
     try {
       window.localStorage.removeItem(DASHBOARD_LAYOUT_STORAGE_KEY);
     } catch {
@@ -141,7 +142,7 @@ export function resetLayout(): DashboardLayoutPreferences {
 export function moveWidget(
   order: DashboardWidgetId[],
   fromIndex: number,
-  toIndex: number,
+  toIndex: number
 ): DashboardWidgetId[] {
   if (
     fromIndex < 0 ||
@@ -155,16 +156,16 @@ export function moveWidget(
 
   const next = [...order];
   const [moved] = next.splice(fromIndex, 1);
-  next.splice(toIndex, 0, moved);
+  next.splice(toIndex, 0, moved!);
   return next;
 }
 
 /** Toggles a widget's visibility, returning a new hidden list. */
 export function toggleWidgetVisibility(
   hidden: DashboardWidgetId[],
-  id: DashboardWidgetId,
+  id: DashboardWidgetId
 ): DashboardWidgetId[] {
-  return hidden.includes(id)
-    ? hidden.filter((widgetId) => widgetId !== id)
-    : [...hidden, id];
+  return hidden.includes(id) ? hidden.filter((widgetId) => widgetId !== id) : [...hidden, id];
 }
+
+export type DashboardLayout = DashboardLayoutPreferences;

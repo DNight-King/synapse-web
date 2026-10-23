@@ -65,13 +65,7 @@ export function createProfilerOnRender(id: string): ProfilerOnRenderCallback {
  * Wraps a subtree in React's `<Profiler>` when running in development. In production
  * it renders children directly so no profiling overhead ships to users.
  */
-export function DevProfiler({
-  id,
-  children,
-}: {
-  id: string;
-  children: React.ReactNode;
-}) {
+export function DevProfiler({ id, children }: { id: string; children: React.ReactNode }) {
   if (process.env.NODE_ENV === "production") {
     return <>{children}</>;
   }
@@ -82,7 +76,7 @@ export function DevProfiler({
   );
 }
 
-function useStats(): RenderStat[] {
+function useStats(): Array<RenderStat & { id: string }> {
   const [, force] = useState(0);
   useEffect(() => {
     const listener: Listener = () => force((n) => n + 1);
@@ -95,6 +89,9 @@ function useStats(): RenderStat[] {
     .map(([id, stat]) => ({ id, ...stat }))
     .sort((a, b) => b.totalDuration - a.totalDuration);
 }
+
+/** Short alias used to wrap each lazily loaded tab in the shell. */
+export const Profiled = DevProfiler;
 
 /**
  * Toggleable dev-only overlay showing render count/duration per instrumented component.
@@ -159,9 +156,7 @@ function ProfilerOverlayInner() {
             minWidth: 260,
           }}
         >
-          <div style={{ marginBottom: 4, color: "#888" }}>
-            Alt+P to toggle
-          </div>
+          <div style={{ marginBottom: 4, color: "#888" }}>Alt+P to toggle</div>
           {rows.length === 0 ? (
             <div style={{ color: "#888" }}>No renders recorded yet.</div>
           ) : (

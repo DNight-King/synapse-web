@@ -1,16 +1,20 @@
-# Automated rollback
+---
+title: Automated rollback
+description: How automated rollback works and how to run it by hand.
+order: 10
+---
 
 Implements [#171](https://github.com/Synapse-bridgez/synapse-web/issues/171): an
 automated, fast rollback trigger that does not depend on a human noticing a
 regression, plus the manual overrides and anti-flap guards that make such a
 mechanism safe to leave running unattended.
 
-| File                                                                                  | Role                                                                    |
-| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| [`.github/workflows/rollback.yml`](../.github/workflows/rollback.yml)                 | The workflow: three entry points, state persistence, the alias move.    |
-| [`scripts/deploy/rollback-policy.mjs`](../scripts/deploy/rollback-policy.mjs)         | The decision function. Pure, no I/O, unit tested.                       |
-| [`scripts/deploy/rollback-policy.test.ts`](../scripts/deploy/rollback-policy.test.ts) | 31 tests covering thresholds and the anti-flap guards.                  |
-| [`scripts/deploy/record-promotion.mjs`](../scripts/deploy/record-promotion.mjs)       | Records a promotion so there is something to evaluate and roll back to. |
+| File                                     | Role                                                                    |
+| ---------------------------------------- | ----------------------------------------------------------------------- |
+| `.github/workflows/rollback.yml`         | The workflow: three entry points, state persistence, the alias move.    |
+| `scripts/deploy/rollback-policy.mjs`     | The decision function. Pure, no I/O, unit tested.                       |
+| `scripts/deploy/rollback-policy.test.ts` | 31 tests covering thresholds and the anti-flap guards.                  |
+| `scripts/deploy/record-promotion.mjs`    | Records a promotion so there is something to evaluate and roll back to. |
 
 ## What a rollback is
 

@@ -1,4 +1,8 @@
-# Visual regression CI
+---
+title: Visual regression CI
+description: How visual regression baselines are generated and approved.
+order: 12
+---
 
 How visual regression baselines are gated on pull requests, and how to approve
 an intentional visual change.

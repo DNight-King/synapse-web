@@ -46,7 +46,8 @@ describe("escapeCsvField", () => {
   });
 
   it("handles a value that is only quotes", () => {
-    expect(escapeCsvField('""')).toBe('"""""');
+    // Two quotes double to four, then the field is wrapped in a pair of quotes.
+    expect(escapeCsvField('""')).toBe('""""""');
   });
 });
 

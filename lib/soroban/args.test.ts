@@ -59,7 +59,7 @@ describe("decodeArgValue", () => {
   });
 
   it("decodes a boolean ScVal", () => {
-    expect(decodeArgValue(nativeToScVal(true, { type: "bool" }))).toBe(true);
+    expect(decodeArgValue(nativeToScVal(true))).toBe(true);
   });
 
   it("decodes a struct/map ScVal via structArg round-trip", () => {
@@ -82,8 +82,8 @@ describe("decodeCallArgs", () => {
     expect(decoded.covered).toBe(true);
     expect(decoded.args).toHaveLength(entry!.params!.length);
     decoded.args.forEach((arg, i) => {
-      expect(arg.label).toBe(entry!.params![i].name);
-      expect(arg.type).toBe(entry!.params![i].type);
+      expect(arg.label).toBe(entry!.params![i]!.name);
+      expect(arg.type).toBe(entry!.params![i]!.type);
       expect(arg.raw).toBeDefined();
     });
   });
@@ -92,8 +92,8 @@ describe("decodeCallArgs", () => {
     const decoded = decodeCallArgs("unknown_entrypoint", [addressArg(TEST_ADDRESS)]);
     expect(decoded.covered).toBe(false);
     expect(decoded.args).toHaveLength(1);
-    expect(decoded.args[0].label).toMatch(/raw|undecoded/i);
-    expect(decoded.args[0].raw).toBeDefined();
+    expect(decoded.args[0]!.label).toMatch(/raw|undecoded/i);
+    expect(decoded.args[0]!.raw).toBeDefined();
   });
 
   it("falls back to raw for arguments beyond documented ABI params", () => {
@@ -106,6 +106,6 @@ describe("decodeCallArgs", () => {
     const decoded = decodeCallArgs(entry!.name, args);
     expect(decoded.args).toHaveLength(args.length);
     const extra = decoded.args[decoded.args.length - 1];
-    expect(extra.label).toMatch(/raw|undecoded/i);
+    expect(extra!.label).toMatch(/raw|undecoded/i);
   });
 });

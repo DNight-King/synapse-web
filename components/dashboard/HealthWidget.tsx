@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useMemo } from 'react';
-import { useSorobanStatus } from '@/lib/soroban/useSorobanStatus';
+import { useMemo } from "react";
+import { useSorobanStatus } from "@/lib/soroban/useSorobanStatus";
 
-type HealthState = 'healthy' | 'degraded' | 'down';
+type HealthState = "healthy" | "degraded" | "down";
 
 interface HealthWidgetProps {
   /** Optional override for the freshness threshold (ms) before the poller is considered stale. */
@@ -15,30 +15,33 @@ interface HealthWidgetProps {
 const DEFAULT_STALE_AFTER_MS = 30_000;
 const DEFAULT_SLOW_LATENCY_MS = 1_500;
 
-const STATE_STYLES: Record<HealthState, { label: string; dot: string; badge: string; text: string }> = {
+const STATE_STYLES: Record<
+  HealthState,
+  { label: string; dot: string; badge: string; text: string }
+> = {
   healthy: {
-    label: 'Healthy',
-    dot: 'bg-emerald-500',
-    badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
-    text: 'text-emerald-600 dark:text-emerald-400',
+    label: "Healthy",
+    dot: "bg-emerald-500",
+    badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+    text: "text-emerald-600 dark:text-emerald-400",
   },
   degraded: {
-    label: 'Degraded',
-    dot: 'bg-amber-500',
-    badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
-    text: 'text-amber-600 dark:text-amber-400',
+    label: "Degraded",
+    dot: "bg-amber-500",
+    badge: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30",
+    text: "text-amber-600 dark:text-amber-400",
   },
   down: {
-    label: 'Down',
-    dot: 'bg-red-500',
-    badge: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30',
-    text: 'text-red-600 dark:text-red-400',
+    label: "Down",
+    dot: "bg-red-500",
+    badge: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30",
+    text: "text-red-600 dark:text-red-400",
   },
 };
 
 function formatLatency(latencyMs: number | null | undefined): string {
   if (latencyMs === null || latencyMs === undefined || Number.isNaN(latencyMs)) {
-    return '—';
+    return "—";
   }
   if (latencyMs < 1000) {
     return `${Math.round(latencyMs)} ms`;
@@ -48,11 +51,11 @@ function formatLatency(latencyMs: number | null | undefined): string {
 
 function formatSince(timestamp: number | null | undefined): string {
   if (!timestamp) {
-    return 'never';
+    return "never";
   }
   const deltaMs = Date.now() - timestamp;
   if (deltaMs < 0) {
-    return 'just now';
+    return "just now";
   }
   const seconds = Math.floor(deltaMs / 1000);
   if (seconds < 60) {
@@ -80,21 +83,21 @@ export default function HealthWidget({
   const status = useSorobanStatus();
 
   const { state, rpcReachable, latencyMs, lastEventAt } = useMemo(() => {
-    const reachable = status?.rpcReachable ?? status?.isConnected ?? false;
-    const latency = status?.latencyMs ?? null;
-    const lastEvent = status?.lastEventAt ?? status?.lastProcessedEventAt ?? null;
+    const reachable = status.status === "connected";
+    const latency = status.health.latencyMs ?? null;
+    const lastEvent = status.health.lastEventTimestamp;
 
     let next: HealthState;
     if (!reachable) {
-      next = 'down';
+      next = "down";
     } else if (
       (latency !== null && latency > slowLatencyMs) ||
       !lastEvent ||
       Date.now() - lastEvent > staleAfterMs
     ) {
-      next = 'degraded';
+      next = "degraded";
     } else {
-      next = 'healthy';
+      next = "healthy";
     }
 
     return { state: next, rpcReachable: reachable, latencyMs: latency, lastEventAt: lastEvent };
@@ -122,8 +125,8 @@ export default function HealthWidget({
       <dl className="grid grid-cols-2 gap-3 text-sm">
         <div>
           <dt className="text-xs text-muted-foreground">RPC</dt>
-          <dd className={`font-medium ${rpcReachable ? 'text-foreground' : styles.text}`}>
-            {rpcReachable ? 'Reachable' : 'Unreachable'}
+          <dd className={`font-medium ${rpcReachable ? "text-foreground" : styles.text}`}>
+            {rpcReachable ? "Reachable" : "Unreachable"}
           </dd>
         </div>
         <div>

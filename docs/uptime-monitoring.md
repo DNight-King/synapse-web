@@ -1,4 +1,8 @@
-# Uptime and RPC-connectivity monitoring
+---
+title: Uptime and RPC-connectivity monitoring
+description: Synthetic uptime and RPC-connectivity monitoring.
+order: 11
+---
 
 The `CI` workflow proves the code builds. It says nothing about whether the
 **deployed** site is serving right now, or whether the Soroban RPC provider it

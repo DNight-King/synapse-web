@@ -29,7 +29,7 @@ function buildQrMatrix(value: string, size = 25): boolean[][] {
       for (let x = 0; x < 7; x++) {
         const edge = x === 0 || y === 0 || x === 6 || y === 6;
         const core = x >= 2 && x <= 4 && y >= 2 && y <= 4;
-        matrix[oy + y][ox + x] = edge || core;
+        matrix[oy + y]![ox + x] = edge || core;
       }
     }
   };
@@ -49,7 +49,7 @@ function buildQrMatrix(value: string, size = 25): boolean[][] {
       if (inFinder) continue;
       hash ^= (x + 1) * 0x9e3779b1 + (y + 1) * 0x85ebca6b;
       hash = Math.imul(hash ^ (hash >>> 15), 0x2545f491) >>> 0;
-      matrix[y][x] = (hash & 0x1) === 1;
+      matrix[y]![x] = (hash & 0x1) === 1;
     }
   }
   return matrix;

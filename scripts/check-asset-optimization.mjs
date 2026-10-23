@@ -4,6 +4,12 @@ import path from "node:path";
 export const MAX_IMAGE_SIZE_KB = 150;
 export const ALLOWED_FORMATS = [".svg", ".png", ".webp", ".ico", ".jpg", ".jpeg"];
 
+/**
+ * Non-image files that must live in `public/` for the PWA offline shell. They
+ * are exempt from the image-format check (but not from the size limit).
+ */
+export const ALLOWED_PWA_FILES = ["manifest.json", "sw.js"];
+
 export function validateAssets(publicDir = "public") {
   const results = [];
   let hasFailure = false;
@@ -21,7 +27,7 @@ export function validateAssets(publicDir = "public") {
       const ext = path.extname(file).toLowerCase();
       const sizeKb = Math.round((stat.size / 1024) * 100) / 100;
 
-      const formatValid = ALLOWED_FORMATS.includes(ext);
+      const formatValid = ALLOWED_FORMATS.includes(ext) || ALLOWED_PWA_FILES.includes(file);
       const sizeValid = sizeKb <= MAX_IMAGE_SIZE_KB;
 
       if (!formatValid || !sizeValid) {

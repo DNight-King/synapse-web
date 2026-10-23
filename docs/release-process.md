@@ -1,4 +1,8 @@
-# Release process
+---
+title: Release process
+description: How releases are versioned, changelogged and published.
+order: 9
+---
 
 Versions, the changelog, and GitHub releases are generated from conventional
 commits by [semantic-release](https://semantic-release.gitbook.io/). Nobody edits
@@ -55,7 +59,7 @@ to tag and publish.
 
 A breaking change is `feat!:` or a `BREAKING CHANGE:` footer in the body, and
 produces a major release. See the versioning strategy in
-[`CHANGELOG.md`](../CHANGELOG.md).
+`CHANGELOG.md`.
 
 Commit format is **not** enforced at commit time — the issue that would add that
 is separate. A non-conventional commit is simply ignored by the release

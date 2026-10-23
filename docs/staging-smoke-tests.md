@@ -1,4 +1,8 @@
-# Staging smoke tests
+---
+title: Staging smoke tests
+description: The post-deploy smoke suite that gates promotion.
+order: 14
+---
 
 A deploy that builds cleanly still tells you nothing about the _running_
 application. A production bundle can ship with a missing chunk, a broken

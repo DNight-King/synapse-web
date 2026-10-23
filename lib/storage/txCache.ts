@@ -172,7 +172,7 @@ export class TxCache {
     if (this.memory.size <= this.retentionCap) return;
     const ordered = Array.from(this.memory.values()).sort((a, b) => a.timestamp - b.timestamp);
     const excess = this.memory.size - this.retentionCap;
-    for (let i = 0; i < excess; i++) this.memory.delete(ordered[i].id);
+    for (let i = 0; i < excess; i++) this.memory.delete(ordered[i]!.id);
   }
 
   private async evictDb(db: IDBDatabase): Promise<void> {

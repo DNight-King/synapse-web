@@ -1,5 +1,10 @@
-export function shortId(id: string): string {
-  return id ? id.slice(0, 13) + "…" : "—";
+export function shortId(id: string, chars: number = 13): string {
+  return id ? id.slice(0, chars) + "…" : "—";
+}
+
+/** Joins class names, skipping falsy values. */
+export function cn(...classes: Array<string | false | null | undefined>): string {
+  return classes.filter(Boolean).join(" ");
 }
 
 export function elapsed(ts: number): string {

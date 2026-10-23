@@ -1,12 +1,7 @@
 import { StellarWalletsKit } from "./kit";
 
 export type SigningRequestStatus =
-  | "pending"
-  | "signing"
-  | "signed"
-  | "cancelled"
-  | "stale"
-  | "failed";
+  "pending" | "signing" | "signed" | "cancelled" | "stale" | "failed";
 
 export interface SigningRequest<T = string> {
   id: string;
@@ -57,7 +52,11 @@ class SigningQueue {
 
   getState(): SigningQueueState {
     const completed = this.items.filter(
-      (i) => i.status === "signed" || i.status === "stale" || i.status === "failed" || i.status === "cancelled",
+      (i) =>
+        i.status === "signed" ||
+        i.status === "stale" ||
+        i.status === "failed" ||
+        i.status === "cancelled"
     ).length;
     return {
       items: this.items.map((i) => ({ ...i })),
@@ -78,17 +77,21 @@ class SigningQueue {
    * XDR, or rejects if the item was cancelled, stale, or failed.
    */
   enqueue<T = string>(request: Omit<SigningRequest<T>, "id" | "status">): Promise<T> {
-    const item: SigningRequest = {
+    const item = {
       ...request,
       id: nextId(),
       status: "pending",
-    };
+    } as unknown as SigningRequest;
     this.items.push(item);
     this.emit();
 
     return new Promise<T>((resolve, reject) => {
-      (item as SigningRequest & { _resolve?: (v: T) => void; _reject?: (e: Error) => void })._resolve = resolve;
-      (item as SigningRequest & { _resolve?: (v: T) => void; _reject?: (e: Error) => void })._reject = reject;
+      (
+        item as SigningRequest & { _resolve?: (v: T) => void; _reject?: (e: Error) => void }
+      )._resolve = resolve;
+      (
+        item as SigningRequest & { _resolve?: (v: T) => void; _reject?: (e: Error) => void }
+      )._reject = reject;
       void this.drain();
     });
   }
@@ -152,9 +155,7 @@ class SigningQueue {
           const message = err instanceof Error ? err.message : String(err);
           const stale = /stale|expired|not found|invalid|tx_bad|timebound/i.test(message);
           next.status = stale ? "stale" : "failed";
-          next.error = stale
-            ? "Transaction is no longer valid and was skipped"
-            : message;
+          next.error = stale ? "Transaction is no longer valid and was skipped" : message;
           this.settle(next, new Error(next.error));
         }
         this.emit();

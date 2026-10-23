@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Draft persistence for in-progress admin forms.
@@ -20,6 +20,8 @@ export interface DraftPersistenceOptions<T> {
   debounceMs?: number;
   /** Stale drafts older than this are discarded. Defaults to 24h. */
   maxAgeMs?: number;
+  /** Alias of `maxAgeMs`. */
+  ttl?: number;
   /** Storage backend. Defaults to localStorage. */
   storage?: Storage;
   /** Set to false to disable persistence (e.g. while submitting). */
@@ -35,6 +37,16 @@ export interface DraftPersistenceResult<T> {
   discardDraft: () => void;
   /** Clear the persisted draft (call on successful submission). */
   clearDraft: () => void;
+  /** Alias of `restoredDraft`. */
+  draft: T | null;
+  /** Alias of `hasRestoredDraft`. */
+  restored: boolean;
+  /** Explicitly persist `next` (debounced), for forms that are not driven by `values`. */
+  save: (next: T) => void;
+  /** Alias of `discardDraft`. */
+  discard: () => void;
+  /** Alias of `clearDraft`. */
+  clear: () => void;
 }
 
 interface StoredDraft<T> {
@@ -47,7 +59,7 @@ const DEFAULT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 function getStorage(storage?: Storage): Storage | null {
   if (storage) return storage;
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   try {
     return window.localStorage;
   } catch {
@@ -61,7 +73,7 @@ function readDraft<T>(storage: Storage | null, key: string, maxAgeMs: number): T
     const raw = storage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as StoredDraft<T>;
-    if (!parsed || typeof parsed.savedAt !== 'number') {
+    if (!parsed || typeof parsed.savedAt !== "number") {
       storage.removeItem(key);
       return null;
     }
@@ -79,14 +91,16 @@ export function useDraftPersistence<T>({
   key,
   values,
   debounceMs = DEFAULT_DEBOUNCE_MS,
-  maxAgeMs = DEFAULT_MAX_AGE_MS,
+  maxAgeMs: maxAgeOption,
+  ttl,
   storage,
   enabled = true,
 }: DraftPersistenceOptions<T>): DraftPersistenceResult<T> {
+  const maxAgeMs = maxAgeOption ?? ttl ?? DEFAULT_MAX_AGE_MS;
   const resolvedStorage = getStorage(storage);
 
   const [restoredDraft, setRestoredDraft] = useState<T | null>(() =>
-    readDraft<T>(resolvedStorage, key, maxAgeMs),
+    readDraft<T>(resolvedStorage, key, maxAgeMs)
   );
 
   const hasRestoredDraft = restoredDraft !== null;
@@ -94,9 +108,8 @@ export function useDraftPersistence<T>({
   const valuesRef = useRef(values);
   valuesRef.current = values;
 
-  // Debounced persistence as the user types.
-  useEffect(() => {
-    if (!enabled || !resolvedStorage) return;
+  const schedulePersist = useCallback(() => {
+    if (!resolvedStorage) return;
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       try {
@@ -106,10 +119,24 @@ export function useDraftPersistence<T>({
         // Storage may be unavailable or full; persistence is best-effort.
       }
     }, debounceMs);
+  }, [key, debounceMs, resolvedStorage]);
+
+  // Debounced persistence as the user types.
+  useEffect(() => {
+    if (!enabled) return;
+    schedulePersist();
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [key, values, debounceMs, enabled, resolvedStorage]);
+  }, [values, enabled, schedulePersist]);
+
+  const save = useCallback(
+    (next: T) => {
+      valuesRef.current = next;
+      schedulePersist();
+    },
+    [schedulePersist]
+  );
 
   const discardDraft = useCallback(() => {
     setRestoredDraft(null);
@@ -134,7 +161,17 @@ export function useDraftPersistence<T>({
     }
   }, [key, resolvedStorage]);
 
-  return { restoredDraft, hasRestoredDraft, discardDraft, clearDraft };
+  return {
+    restoredDraft,
+    hasRestoredDraft,
+    discardDraft,
+    clearDraft,
+    draft: restoredDraft,
+    restored: hasRestoredDraft,
+    save,
+    discard: discardDraft,
+    clear: clearDraft,
+  };
 }
 
 export default useDraftPersistence;

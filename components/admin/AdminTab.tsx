@@ -42,7 +42,7 @@ interface AdminTabProps {
 }
 
 export default function AdminTab({ callbackUrl, addressLabel, loading = false, error }: AdminTabProps) {
-  const [label, setLabel] = useState(addressLabel ?? '');
+  const [label, setLabel] = useState(addressLabel ?? "");
 
   if (loading) return <p role="status">Loading administration settings…</p>;
   if (error) return <p role="alert">Unable to load administration settings: {error}</p>;
@@ -58,9 +58,10 @@ export default function AdminTab({ callbackUrl, addressLabel, loading = false, e
       </section>
 
       <section className="admin-tab__section">
-        <h3>Address Label</h3>
+        <h3 id="admin-address-label-heading">Address Label</h3>
         <input
           type="text"
+          aria-labelledby="admin-address-label-heading"
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           className="admin-tab__address-label"

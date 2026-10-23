@@ -1,46 +1,53 @@
-import React from 'react';
+"use client";
+import { BG2, BORDER, DIM, MONO } from "@/lib/constants";
+import type { CSSProperties, ReactNode } from "react";
 
 interface PanelProps {
   title?: string;
-  subtitle?: string;
-  actions?: React.ReactNode;
-  children: React.ReactNode;
-  className?: string;
-  padded?: boolean;
+  children: ReactNode;
+  style?: CSSProperties;
+  accentColor?: string;
 }
 
-export function Panel({
-  title,
-  subtitle,
-  actions,
-  children,
-  className = '',
-  padded = true,
-}: PanelProps) {
+export function Panel({ title, children, style, accentColor }: PanelProps) {
   return (
-    <section
-      className={`rounded-lg border border-[var(--panel-border)] bg-[var(--panel-bg)] text-[var(--panel-fg)] shadow-sm ${className}`}
+    <div
+      style={{
+        background: BG2,
+        border: `1px solid ${BORDER}`,
+        padding: "16px 18px",
+        position: "relative",
+        overflow: "hidden",
+        ...style,
+      }}
     >
-      {(title || subtitle || actions) && (
-        <header className="flex items-start justify-between gap-4 border-b border-[var(--panel-border)] px-4 py-3">
-          <div className="min-w-0">
-            {title && (
-              <h2 className="truncate text-sm font-semibold tracking-wide text-[var(--panel-title)]">
-                {title}
-              </h2>
-            )}
-            {subtitle && (
-              <p className="mt-0.5 truncate text-xs text-[var(--panel-muted)]">
-                {subtitle}
-              </p>
-            )}
-          </div>
-          {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
-        </header>
+      {accentColor && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 2,
+            background: accentColor,
+            opacity: 0.75,
+          }}
+        />
       )}
-      <div className={padded ? 'p-4' : ''}>{children}</div>
-    </section>
+      {title && (
+        <div
+          style={{
+            fontSize: 9,
+            letterSpacing: "0.14em",
+            color: DIM,
+            fontFamily: MONO,
+            marginBottom: 12,
+          }}
+        >
+          {title}
+        </div>
+      )}
+      {children}
+    </div>
   );
 }
-
-export default Panel;

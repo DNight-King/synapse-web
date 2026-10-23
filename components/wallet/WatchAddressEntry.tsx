@@ -17,7 +17,7 @@ export function isValidStellarAddress(address: string): boolean {
  * by the wallet context while in watch mode.
  */
 export default function WatchAddressEntry() {
-  const { mode, watchAddress, disconnect } = useWallet();
+  const { mode, watchAddress, disconnect, address: watchedAddress } = useWallet();
   const [address, setAddress] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -40,12 +40,9 @@ export default function WatchAddressEntry() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="font-medium text-amber-900">Watch-only mode</p>
-            <p className="mt-1 break-all font-mono text-xs text-amber-800">
-              {watchAddress ? trimmed : ""}
-            </p>
+            <p className="mt-1 break-all font-mono text-xs text-amber-800">{watchedAddress}</p>
             <p className="mt-1 text-xs text-amber-700">
-              Read-only session. Write actions are disabled until you connect a
-              signing wallet.
+              Read-only session. Write actions are disabled until you connect a signing wallet.
             </p>
           </div>
           <button
@@ -65,15 +62,11 @@ export default function WatchAddressEntry() {
       onSubmit={handleSubmit}
       className="rounded-lg border border-gray-200 bg-white p-4 text-sm"
     >
-      <label
-        htmlFor="watch-address"
-        className="block font-medium text-gray-900"
-      >
+      <label htmlFor="watch-address" className="block font-medium text-gray-900">
         Watch an address
       </label>
       <p className="mt-1 text-xs text-gray-500">
-        View dashboard data for any Stellar address without connecting a
-        wallet.
+        View dashboard data for any Stellar address without connecting a wallet.
       </p>
       <div className="mt-3 flex gap-2">
         <input
@@ -97,9 +90,7 @@ export default function WatchAddressEntry() {
           Watch
         </button>
       </div>
-      {error ? (
-        <p className="mt-2 text-xs text-red-600">{error}</p>
-      ) : null}
+      {error ? <p className="mt-2 text-xs text-red-600">{error}</p> : null}
     </form>
   );
 }
